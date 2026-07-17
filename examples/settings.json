@@ -1,0 +1,21 @@
+{
+  "playerName": "Player",
+  "playerIcon": 0,
+  "playerTitle": 0,
+  "musicVolume": 1,
+  "SEVolume": 1,
+  "offset": 0,
+  "chordSupport": true,
+  "hitFxIsOn": true,
+  "noteScale": 1,
+  "dspSliderValue": 2,
+  "autoSync": false,
+  "readPrivacyPolicy": 1,
+  "playerIDUpdated": true,
+  "playerID": "GUEST",
+  "Guid": "00000000-0000-0000-0000-000000000000",
+  "selfIntro": "",
+  "AntiAddictionRestrictType": 0,
+  "IsFirstRun": 1,
+  "splashWarningDisplayedV3_0": true
+}
