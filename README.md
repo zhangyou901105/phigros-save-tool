@@ -33,7 +33,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/YOUR_USERNAME/phigros-save-tool.git
+git clone https://github.com/zhangyou901105/phigros-save-tool.git
 cd phigros-save-tool
 
 # 创建虚拟环境
