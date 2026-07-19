@@ -18,14 +18,11 @@ class PhigrosSaveEditor:
         self.root = root
         self.root.title("Phigros Save Manager v2.0")
         self.root.geometry("1200x800")
-
         self.entries = {}
         self.current_file = None
-
         self._build_ui()
 
     def _build_ui(self):
-        # 顶部工具栏
         toolbar = ttk.Frame(self.root)
         toolbar.pack(fill=tk.X, padx=5, pady=5)
 
@@ -41,7 +38,6 @@ class PhigrosSaveEditor:
         ttk.Button(toolbar, text="补全章节", command=self.fill_chapter_progress).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar, text="补全AT/INS", command=self.fill_special_unlocks).pack(side=tk.LEFT, padx=2)
 
-        # 搜索栏
         search_frame = ttk.Frame(toolbar)
         search_frame.pack(side=tk.LEFT, padx=(20, 5))
         ttk.Label(search_frame, text="搜索:").pack(side=tk.LEFT)
@@ -49,7 +45,6 @@ class PhigrosSaveEditor:
         self.search_var.trace_add("write", self.on_search)
         ttk.Entry(search_frame, textvariable=self.search_var, width=30).pack(side=tk.LEFT, padx=5)
 
-        # 分类选择
         cat_frame = ttk.Frame(toolbar)
         cat_frame.pack(side=tk.LEFT, padx=5)
         ttk.Label(cat_frame, text="分类:").pack(side=tk.LEFT)
@@ -59,18 +54,14 @@ class PhigrosSaveEditor:
         self.cat_combo.bind("<<ComboboxSelected>>", lambda e: self.refresh_entries())
         self.cat_combo.pack(side=tk.LEFT, padx=5)
 
-        # 统计信息
         self.stat_var = tk.StringVar(value="未加载存档")
         ttk.Label(toolbar, textvariable=self.stat_var, foreground="blue").pack(side=tk.RIGHT, padx=5)
 
-        # 主区域：左右分栏
         main_paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
         main_paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # 左侧：快捷操作
         left_frame = ttk.Frame(main_paned, width=220)
         main_paned.add(left_frame, weight=1)
-
         ttk.Label(left_frame, text="快捷操作", font=("Arial", 12, "bold")).pack(pady=5)
 
         btn_config = {"width": 18, "height": 2}
@@ -83,14 +74,7 @@ class PhigrosSaveEditor:
         ttk.Button(left_frame, text="设置\n课题模式=金色99", **btn_config,
                    command=lambda: self.set_key("challengeModeRank", "499")).pack(pady=2)
         ttk.Separator(left_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
-        ttk.Button(left_frame, text="消除所有\n红点", **btn_config,
-                   command=self.fix_collection_red_dots).pack(pady=2)
-        ttk.Button(left_frame, text="补全\n章节进度", **btn_config,
-                   command=self.fill_chapter_progress).pack(pady=2)
-        ttk.Button(left_frame, text="补全\nAT/INSGrade", **btn_config,
-                   command=self.fill_special_unlocks).pack(pady=2)
 
-        # 右侧：条目列表
         right_frame = ttk.Frame(main_paned)
         main_paned.add(right_frame, weight=4)
 
@@ -109,21 +93,15 @@ class PhigrosSaveEditor:
         scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
         scrollbar_x.pack(side=tk.BOTTOM, fill=tk.X)
 
-        # 底部状态栏
         status_frame = ttk.Frame(self.root)
         status_frame.pack(fill=tk.X, padx=5, pady=2)
         self.status_var = tk.StringVar(value="就绪")
         ttk.Label(status_frame, textvariable=self.status_var, foreground="gray").pack(side=tk.LEFT)
 
-        # 右键菜单
         self.menu = tk.Menu(self.root, tearoff=0)
         self.menu.add_command(label="编辑选中项", command=self.edit_selected)
         self.menu.add_command(label="删除选中项", command=self.delete_selected)
         self.tree.bind("<Button-3>", self.show_context_menu)
-
-    # ============================================================
-    # 分类定义
-    # ============================================================
 
     CATEGORIES = [
         ("全部", lambda k: True),
@@ -145,10 +123,6 @@ class PhigrosSaveEditor:
             if name == cat_name:
                 return func(key)
         return True
-
-    # ============================================================
-    # 文件操作
-    # ============================================================
 
     def load_save(self):
         path = filedialog.askopenfilename(
@@ -227,10 +201,6 @@ class PhigrosSaveEditor:
         except Exception as e:
             messagebox.showerror("错误", f"导入失败：{e}")
 
-    # ============================================================
-    # 视图刷新
-    # ============================================================
-
     def on_search(self, *args):
         self.refresh_entries()
 
@@ -268,10 +238,6 @@ class PhigrosSaveEditor:
             f"歌曲：{songs} | 收藏：{collections} | "
             f"插画：{illustrations} | 头像：{portraits}"
         )
-
-    # ============================================================
-    # 快捷操作
-    # ============================================================
 
     def set_key(self, key, value):
         self.entries[key] = value
@@ -341,10 +307,6 @@ class PhigrosSaveEditor:
         self.refresh_entries()
         self.status_var.set("已补全特殊解锁")
         messagebox.showinfo("完成", "已补全 AT 解锁标志和 INSGrade")
-
-    # ============================================================
-    # 编辑操作
-    # ============================================================
 
     def edit_selected(self):
         selected = self.tree.selection()
