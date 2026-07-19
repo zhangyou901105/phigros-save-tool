@@ -2,7 +2,16 @@
 
 Phigros v3.19.4 存档管理工具，支持命令行和图形界面。
 
-## 依赖
+## 安装
+
+### 克隆项目
+
+```bash
+git clone https://github.com/zhangyou901105/phigros-save-tool.git
+cd phigros-save-tool
+```
+
+### 依赖
 
 ```bash
 pip install pycryptodome
@@ -93,10 +102,10 @@ python -m phigros_save_tool.cli encrypt data.json playerprefs.xml
 pip install pyinstaller
 ```
 
-打包 GUI：
+打包 GUI（注意 `--add-data` 参数，确保 src 目录被包含）：
 
 ```bash
-pyinstaller --onefile --name PhigrosSaveManager run_gui.py
+pyinstaller --onefile --name PhigrosSaveManager --add-data "src;src" run_gui.py
 ```
 
 生成的 `PhigrosSaveManager.exe` 在 `dist/` 目录下，可直接运行。

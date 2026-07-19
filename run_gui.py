@@ -3,13 +3,22 @@
 用法:
   python run_gui.py
   python run_gui.py path/to/save.xml   # 打开指定存档
+
+PyInstaller 打包:
+  pyinstaller --onefile --name PhigrosSaveManager --add-data "src;src" run_gui.py
 """
 
 import sys
 import tkinter as tk
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+# PyInstaller --onefile 模式下 __file__ 不可用，使用 sys._MEIPASS
+if getattr(sys, 'frozen', False):
+    base = Path(sys._MEIPASS) / "src"
+else:
+    base = Path(__file__).resolve().parent / "src"
+
+sys.path.insert(0, str(base))
 
 from phigros_save_tool.gui import PhigrosSaveEditor
 

@@ -6,7 +6,13 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+# PyInstaller --onefile 模式下 __file__ 不可用，使用 sys._MEIPASS
+if getattr(sys, 'frozen', False):
+    _src_path = Path(sys._MEIPASS) / "src"
+else:
+    _src_path = Path(__file__).resolve().parent.parent / "src"
+
+sys.path.insert(0, str(_src_path))
 
 from phigros_save_tool.crypto import decrypt_playerprefs_xml, encrypt_to_playerprefs_xml
 
@@ -64,14 +70,14 @@ class PhigrosSaveEditor:
         main_paned.add(left_frame, weight=1)
         ttk.Label(left_frame, text="快捷操作", font=("Arial", 12, "bold")).pack(pady=5)
 
-        btn_config = {"width": 18, "height": 2}
-        ttk.Button(left_frame, text="设置\nGameCompleted=3.0", **btn_config,
+        btn_cfg = {"width": 18}
+        ttk.Button(left_frame, text="设置\nGameCompleted=3.0", **btn_cfg,
                    command=lambda: self.set_key("GameCompleted", "3.0")).pack(pady=2)
-        ttk.Button(left_frame, text="设置\nchallengeModeRank=551", **btn_config,
+        ttk.Button(left_frame, text="设置\nchallengeModeRank=551", **btn_cfg,
                    command=lambda: self.set_key("challengeModeRank", "551")).pack(pady=2)
-        ttk.Button(left_frame, text="设置\n课题模式=蓝色30", **btn_config,
+        ttk.Button(left_frame, text="设置\n课题模式=蓝色30", **btn_cfg,
                    command=lambda: self.set_key("challengeModeRank", "230")).pack(pady=2)
-        ttk.Button(left_frame, text="设置\n课题模式=金色99", **btn_config,
+        ttk.Button(left_frame, text="设置\n课题模式=金色99", **btn_cfg,
                    command=lambda: self.set_key("challengeModeRank", "499")).pack(pady=2)
         ttk.Separator(left_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
 
