@@ -25,7 +25,9 @@
 | **APK 拆包** | 从 APK 提取 `catalog.json`、`songs.json`、`key-store.json`、谱面 bundle 清单 |
 | **解密存档** | 将加密的 `playerprefs.xml` 还原为可读 JSON |
 | **加密存档** | 将可读 JSON 加密为 `playerprefs.xml` |
-| **自定义存档** | 根据配置文件夹生成完整加密存档（成绩 + 解锁 + 章节进度） |
+| **零配置构建** | 一行命令生成全满分全解锁存档（自动加载数据文件） |
+| **基线构建** | 以现有存档为模板，保留设置，补满分成绩和解锁 |
+| **配置构建** | 通过 `songs.json` + `key-store.json` + `settings.json` 精确控制 |
 
 ---
 
@@ -86,11 +88,17 @@ phigros-save decrypt com.PigeonGames.Phigros.v2.playerprefs.xml savedata.json
 ...
 ```
 
-### 3. 构建自定义存档
+### 3. 构建存档
 
 ```bash
-# 使用示例配置
-phigros-save build ./examples/ ./custom_save.xml --rank 551
+# 零配置：一行搞定全满分全解锁存档（自动加载 key-store.json 和 record-key-map.json）
+phigros-save build-full output.xml --rank 551
+
+# 基于现有存档修改（保留设置，补满分成绩）
+phigros-save build-from my_save.xml output.xml --rank 551
+
+# 精确控制（配置文件法）
+phigros-save build-config ./my-config/ output.xml
 ```
 
 ---
@@ -101,47 +109,33 @@ phigros-save build ./examples/ ./custom_save.xml --rank 551
 phigros-save <command> [options]
 
 Commands:
-  unpack     从 APK 拆包歌曲数据
-  decrypt    解密 playerprefs.xml 为 JSON
-  encrypt    加密 JSON 为 playerprefs.xml
-  build      根据配置文件夹构建完整存档
-
-Options:
-  --help     显示帮助
+  unpack        从 APK 拆包歌曲数据
+  decrypt       解密 playerprefs.xml 为 JSON
+  encrypt       加密 JSON 为 playerprefs.xml
+  build-full    零配置：一行生成全满分全解锁存档
+  build-from    基线法：以现有存档为模板修改
+  build-config  配置文件法：精确控制存档内容
 ```
 
-### unpack
+### build-full（零配置）
 
 ```bash
-phigros-save unpack <apk_path> <output_dir>
-```
+# 一行搞定，自动加载 key-store.json + record-key-map.json
+phigros-save build-full output.xml --rank 551
 
-### decrypt
+# 自定义玩家名
+phigros-save build-full output.xml --rank 230 --player-name "Arlec"
 
-```bash
-phigros-save decrypt <input.xml> <output.json> [--new-key]
-```
-
-`--new-key` 使用新推导密钥（默认使用旧 KEY/IV）。
-
-### encrypt
-
-```bash
-phigros-save encrypt <input.json> <output.xml> [--new-key]
-```
-
-### build
-
-```bash
-phigros-save build <config_dir> <output.xml> \
-  --rank 551 \
-  --game-completed 3.0
+# 基于现有存档保留设置
+phigros-save build-full output.xml --baseline my_save.xml
 ```
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--rank` | `551` | 课题模式等级 |
-| `--game-completed` | `3.0` | 首次加载界面绕过标志 |
+| `--rank` | `551` | 课题模式等级（百位=颜色，十位+个位=等级） |
+| `--game-completed` | `3.0` | GameCompleted 值 |
+| `--player-name` | 无 | 玩家名称 |
+| `--baseline` | 无 | 基线存档 XML，保留其设置项 |
 
 ---
 
@@ -152,7 +146,9 @@ from phigros_save_tool import (
     Keys,                          # 密钥常量
     decrypt_playerprefs_xml,       # XML → dict
     encrypt_to_playerprefs_xml,    # dict → XML
-    build_custom_save,             # 配置文件夹 → 加密 XML
+    build_custom_save,             # 配置文件夹 → 加密 XML（旧 API，保留兼容）
+    build_full_save,               # 零配置全存档构建（推荐）
+    build_from_baseline,           # 基线法修改存档（推荐）
     unpack_apk,                    # APK → 提取文件
 )
 
@@ -164,12 +160,18 @@ print(f"Decrypted {len(entries)} entries, {len(failed)} failed")
 size = encrypt_to_playerprefs_xml(entries, "output.xml")
 print(f"Encrypted: {size:,} bytes")
 
-# 构建
-result = build_custom_save(
-    config_dir="./my-config/",
+# 零配置构建（推荐）
+build_full_save(
     output_path="output.xml",
     challenge_rank="551",
-    game_completed="3.0",
+    player_name="Arlec",
+)
+
+# 基线法构建（推荐）
+build_from_baseline(
+    baseline_path="my_save.xml",
+    output_path="output.xml",
+    rank="551",
 )
 
 # 拆包 APK
