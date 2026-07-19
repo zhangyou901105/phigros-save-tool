@@ -9,6 +9,7 @@ PyInstaller 打包:
 """
 
 import sys
+import os
 import tkinter as tk
 from pathlib import Path
 
@@ -20,10 +21,27 @@ else:
 
 sys.path.insert(0, str(base))
 
-from phigros_save_tool.gui import PhigrosSaveEditor
-
 
 def main():
+    try:
+        from phigros_save_tool.gui import PhigrosSaveEditor
+    except ImportError as e:
+        # Auto-relaunch with Python 3.13 if pycryptodome missing
+        if "Crypto" in str(e):
+            candidates = [
+                r"C:\Users\Arlec\AppData\Local\Programs\Python\Python313\python.exe",
+                r"C:\Python313\python.exe",
+            ]
+            for py in candidates:
+                if os.path.exists(py):
+                    print(f"Relaunching with {py}...")
+                    os.execv(py, [py, __file__] + sys.argv[1:])
+            print(f"\nError: {e}")
+            print("Install pycryptodome: pip install pycryptodome")
+            input("\nPress Enter to exit...")
+            return
+        raise
+
     root = tk.Tk()
     app = PhigrosSaveEditor(root)
 
