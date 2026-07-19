@@ -1,11 +1,4 @@
-"""Phigros Save Manager GUI - 基于 tkinter 的存档编辑器。
-
-功能：
-- 打开/保存/新建/导入/导出存档
-- 搜索和分类过滤
-- 快捷操作（全满分、消除红点、补全章节进度等）
-- 右键编辑/删除条目
-"""
+"""Phigros Save Manager GUI - 基于 tkinter 的存档编辑器。"""
 
 import json
 import sys
@@ -13,7 +6,6 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-# 确保能找到本地包
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from phigros_save_tool.crypto import decrypt_playerprefs_xml, encrypt_to_playerprefs_xml
@@ -33,7 +25,6 @@ class PhigrosSaveEditor:
         self._build_ui()
 
     def _build_ui(self):
-        """构建界面。"""
         # 顶部工具栏
         toolbar = ttk.Frame(self.root)
         toolbar.pack(fill=tk.X, padx=5, pady=5)
@@ -46,7 +37,9 @@ class PhigrosSaveEditor:
         ttk.Button(toolbar, text="导入JSON", command=self.import_json).pack(side=tk.LEFT, padx=2)
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=5)
         ttk.Button(toolbar, text="全满分", command=self.fill_all_scores).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="全解锁", command=self.fill_all_unlocks).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text="消除红点", command=self.fix_collection_red_dots).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text="补全章节", command=self.fill_chapter_progress).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text="补全AT/INS", command=self.fill_special_unlocks).pack(side=tk.LEFT, padx=2)
 
         # 搜索栏
         search_frame = ttk.Frame(toolbar)
@@ -74,7 +67,7 @@ class PhigrosSaveEditor:
         main_paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
         main_paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # 左侧：快速操作
+        # 左侧：快捷操作
         left_frame = ttk.Frame(main_paned, width=220)
         main_paned.add(left_frame, weight=1)
 
@@ -296,9 +289,6 @@ class PhigrosSaveEditor:
         self.update_stats()
         self.status_var.set(f"已设置 {count} 条成绩为 AP")
         messagebox.showinfo("完成", f"已将 {count} 条成绩设为 AP (1000000)")
-
-    def fill_all_unlocks(self):
-        messagebox.showinfo("提示", "请在命令行使用 build-full 命令生成全解锁存档，\nGUI 中暂无 key-store 数据源。")
 
     def fix_collection_red_dots(self):
         count = 0
