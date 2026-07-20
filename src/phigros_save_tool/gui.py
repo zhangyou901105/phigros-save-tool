@@ -15,17 +15,34 @@ else:
 sys.path.insert(0, str(_src_path))
 
 from phigros_save_tool.crypto import decrypt_playerprefs_xml, encrypt_to_playerprefs_xml
+from phigros_save_tool.version_manager import VersionManager
 
 
 class PhigrosSaveEditor:
     """Phigros 存档编辑器 GUI。"""
 
+    CATEGORIES = [
+        ("全部", lambda k: True),
+        ("成绩", lambda k: ".Record." in k),
+        ("歌曲", lambda k: k.startswith("0key")),
+        ("收藏", lambda k: k.startswith("1key")),
+        ("插画", lambda k: k.startswith("2key")),
+        ("头像", lambda k: k.startswith("3key")),
+        ("设置", lambda k: k in ("GameCompleted", "challengeModeRank", "playerName",
+                                  "autoSync", "readPrivacyPolicy", "finishLegacyChapter",
+                                  "completed", "chapter8Passed", "chapter8UnlockBegin",
+                                  "chapter8UnlockSecondPhase")),
+        ("解锁标志", lambda k: k.endswith("Unlocked") or k.startswith("unlockFlagOf")
+         or any(k.endswith(s) for s in ("INSGrade", "CollectionTextOpened"))),
+    ]
+
     def __init__(self, root):
         self.root = root
-        self.root.title("Phigros Save Manager v2.0")
-        self.root.geometry("1200x800")
+        self.root.title("Phigros Save Manager v2.1")
+        self.root.geometry("1400x850")
         self.entries = {}
         self.current_file = None
+        self.version_mgr: VersionManager | None = None
         self._build_ui()
 
     def _build_ui(self):
@@ -43,6 +60,16 @@ class PhigrosSaveEditor:
         ttk.Button(toolbar, text="消除红点", command=self.fix_collection_red_dots).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar, text="补全章节", command=self.fill_chapter_progress).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar, text="补全AT/INS", command=self.fill_special_unlocks).pack(side=tk.LEFT, padx=2)
+
+        # 版本选择
+        ver_frame = ttk.Frame(toolbar)
+        ver_frame.pack(side=tk.LEFT, padx=(20, 5))
+        ttk.Label(ver_frame, text="版本:").pack(side=tk.LEFT)
+        self.ver_var = tk.StringVar()
+        self.ver_combo = ttk.Combobox(ver_frame, textvariable=self.ver_var, state="readonly", width=12)
+        self._init_version_selector()
+        self.ver_combo.bind("<<ComboboxSelected>>", lambda e: self.on_version_change())
+        self.ver_combo.pack(side=tk.LEFT, padx=5)
 
         search_frame = ttk.Frame(toolbar)
         search_frame.pack(side=tk.LEFT, padx=(20, 5))
@@ -88,8 +115,8 @@ class PhigrosSaveEditor:
         self.tree = ttk.Treeview(right_frame, columns=columns, show="headings", selectmode="extended")
         self.tree.heading("name", text="键名")
         self.tree.heading("value", text="值")
-        self.tree.column("name", width=400)
-        self.tree.column("value", width=700)
+        self.tree.column("name", width=500, minwidth=300)
+        self.tree.column("value", width=900, minwidth=400)
 
         scrollbar_y = ttk.Scrollbar(right_frame, orient=tk.VERTICAL, command=self.tree.yview)
         scrollbar_x = ttk.Scrollbar(right_frame, orient=tk.HORIZONTAL, command=self.tree.xview)
@@ -109,18 +136,34 @@ class PhigrosSaveEditor:
         self.menu.add_command(label="删除选中项", command=self.delete_selected)
         self.tree.bind("<Button-3>", self.show_context_menu)
 
-    CATEGORIES = [
-        ("全部", lambda k: True),
-        ("成绩记录", lambda k: ".Record." in k),
-        ("歌曲解锁", lambda k: k.startswith("0key")),
-        ("收藏解锁", lambda k: k.startswith("1key")),
-        ("插画解锁", lambda k: k.startswith("2key")),
-        ("头像解锁", lambda k: k.startswith("3key")),
-        ("章节进度", lambda k: any(x in k for x in ["chapter", "C8", "randomVersion", "finishLegacy", "legacyChapter"])),
-        ("特殊解锁", lambda k: any(x in k for x in ["unlockFlagOf", "INSGrade", "challengeModeRank", "GameCompleted"])),
-        ("玩家设置", lambda k: k.startswith(("player", "musicVolume", "SEVolume", "offset", "chordSupport", "autoSync", "Guid", "playerID"))),
-        ("其他", lambda k: True),
-    ]
+        # 横向滚动 tooltip
+        self.tree.bind("<Motion>", self._on_tree_motion)
+
+    def _init_version_selector(self):
+        """初始化版本选择器。"""
+        data_dir = Path(__file__).resolve().parent.parent.parent / "data"
+        if not data_dir.exists():
+            data_dir = Path(__file__).resolve().parent.parent / "data"
+        if not data_dir.exists():
+            data_dir = Path.cwd() / "data"
+
+        self.version_mgr = VersionManager(str(data_dir))
+        versions = self.version_mgr.list_versions()
+        if versions:
+            self.ver_combo["values"] = versions
+            self.ver_combo.set(versions[-1])
+            self.ver_var.set(versions[-1])
+            self.version_mgr.use_version(versions[-1])
+        else:
+            self.ver_combo["values"] = ["无数据"]
+            self.ver_combo.set("无数据")
+
+    def on_version_change(self):
+        """版本切换回调。"""
+        version = self.ver_var.get()
+        if version and version != "无数据":
+            self.version_mgr.use_version(version)
+            self.status_var.set(f"已切换到版本 {version}")
 
     def _matches_category(self, key, cat_name):
         if cat_name == "全部":
@@ -228,8 +271,7 @@ class PhigrosSaveEditor:
         filtered.sort(key=lambda x: x[0].lower())
 
         for key, value in filtered:
-            display_value = value[:300] + "..." if len(value) > 300 else value
-            self.tree.insert("", tk.END, values=(key, display_value))
+            self.tree.insert("", tk.END, values=(key, value))
 
         self.stat_var.set(f"显示：{len(filtered)} / {len(self.entries)} | 分类：{cat_name}")
 
@@ -358,6 +400,28 @@ class PhigrosSaveEditor:
     def show_context_menu(self, event):
         self.tree.selection_set(event.y)
         self.menu.post(event.x_root, event.y_root)
+
+    def _on_tree_motion(self, event):
+        """鼠标悬停时显示完整值的 tooltip。"""
+        item = self.tree.identify_row(event.y)
+        if item:
+            col = self.tree.identify_column(event.x)
+            if col == "#2":  # value 列
+                value = self.tree.item(item)["values"][1]
+                self.tree.event_generate("<<Tooltip>>", x=event.x_root, y=event.y_root)
+                # 创建临时 tooltip
+                if hasattr(self, '_tip') and self._tip.winfo_exists():
+                    self._tip.destroy()
+                self._tip = tk.Toplevel(self.root)
+                self._tip.wm_overrideredirect(True)
+                self._tip.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
+                label = ttk.Label(self._tip, text=value, relief="solid", borderwidth=1, wraplength=400)
+                label.pack()
+                self._tip.after(3000, self._tip.destroy)
+
+    def _on_tree_leave(self, event):
+        if hasattr(self, '_tip') and self._tip.winfo_exists():
+            self._tip.destroy()
 
 
 def main():

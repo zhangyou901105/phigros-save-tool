@@ -1,6 +1,6 @@
-# Phigros Save Manager v2.0
+# Phigros Save Manager v2.1
 
-Phigros v3.19.4 存档管理工具，支持命令行和图形界面。
+Phigros v3.19.4 存档管理工具，内置版本数据，支持版本切换。
 
 ## 安装
 
@@ -24,9 +24,10 @@ pip install pycryptodome
 双击 `run_gui.py` 打开图形界面：
 
 - 打开/保存/新建/导入/导出存档
+- **版本选择**：工具栏下拉框可切换内置版本数据
 - 搜索和分类过滤（成绩、歌曲、收藏、章节等）
 - 快捷操作：全满分、消除红点、补全章节进度、补全 AT/INSGrade
-- 右键编辑/删除条目
+- 右键编辑/删除条目，鼠标悬停显示完整值
 
 或命令行启动：
 
@@ -38,11 +39,17 @@ python run_gui.py savedata.xml    # 打开指定存档
 ### CLI
 
 ```bash
-# 零配置生成全满分全解锁存档
+# 列出可用版本
+python -m phigros_save_tool.cli list-versions
+
+# 零配置生成全满分全解锁存档（自动使用最新内置版本）
 python -m phigros_save_tool.cli build-full output.xml --rank 551
 
+# 指定版本
+python -m phigros_save_tool.cli build-full output.xml --version 3.19.4
+
 # 基于现有存档修改
-python -m phigros_save_tool.cli build-from my_save.xml output.xml --rank 551
+python -m phigros_save_tool.cli build-from my_save.xml output.xml --version 3.19.4
 
 # 拆包 APK
 python -m phigros_save_tool.cli unpack Phigros-v3.19.4.apk ./extracted
@@ -54,10 +61,34 @@ python -m phigros_save_tool.cli encrypt data.json playerprefs.xml
 
 ---
 
+## 版本切换
+
+项目 `data/` 目录内置当前版本数据：
+
+| 文件 | 说明 |
+|------|------|
+| `songs-v3.19.4.json` | 歌曲数据 |
+| `key-store-v3.19.4.json` | 解锁键数据 |
+| `record-key-map-v3.19.4.json` | 成绩键映射 |
+
+**GUI**: 工具栏「版本」下拉框切换版本。
+
+**CLI**: `--version <版本号>` 指定版本：
+
+```bash
+python -m phigros_save_tool.cli build-full output.xml --version 3.19.4
+python -m phigros_save_tool.cli build-from base.xml output.xml --version 3.19.4
+```
+
+添加新版本数据：将同名文件放入 `data/` 目录即可（如 `songs-v3.20.0.json`）。
+
+---
+
 ## 参数说明
 
 | 命令 | 说明 |
 |------|------|
+| `list-versions` | 列出可用版本 |
 | `build-full <out>` | 零配置全存档 |
 | `build-from <base> <out>` | 基于现有存档修改 |
 | `unpack <apk> <dir>` | 拆包 APK |
@@ -102,10 +133,10 @@ python -m phigros_save_tool.cli encrypt data.json playerprefs.xml
 pip install pyinstaller
 ```
 
-打包 GUI（注意 `--add-data` 参数，确保 src 目录被包含）：
+打包 GUI（注意 `--add-data` 参数，确保 src 和 data 目录被包含）：
 
 ```bash
-pyinstaller --onefile --name PhigrosSaveManager --add-data "src;src" run_gui.py
+pyinstaller --onefile --name PhigrosSaveManager --add-data "src;src" --add-data "data;data" run_gui.py
 ```
 
 生成的 `PhigrosSaveManager.exe` 在 `dist/` 目录下，可直接运行。
