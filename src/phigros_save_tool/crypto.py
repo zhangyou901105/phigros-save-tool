@@ -162,5 +162,6 @@ def encrypt_to_playerprefs_xml(
         elem.text = enc_value
 
     tree = ET.ElementTree(root)
-    tree.write(xml_path, encoding="utf-8", xml_declaration=True, short_empty_elements=True)
+    with open(xml_path, "wb") as f:
+        tree.write(f, encoding="utf-8", xml_declaration=True, short_empty_elements=True)
     return os.path.getsize(xml_path)
